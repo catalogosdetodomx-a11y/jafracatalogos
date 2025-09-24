@@ -1,0 +1,7 @@
+{
+  "botones": [
+    { "nombre": "Catálogo A", "url": "https://tusitio.com/catalogoA.json" },
+    { "nombre": "Catálogo B", "url": "https://tusitio.com/catalogoB.json" },
+    { "nombre": "Catálogo C", "url": "https://tusitio.com/catalogoC.json" }
+  ]
+}
