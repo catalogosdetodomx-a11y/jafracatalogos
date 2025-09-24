@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Catálogos con 3 botones actualizables</title>
+<style>
+  body { background:#111; color:#fff; font-family:sans-serif; margin:0; padding:0; text-align:center; user-select:none; }
+  #inicio { display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; gap:12px; padding:0 12px; }
+  button {
+    margin:6px 0; padding:12px 28px; font-size:16px; border:none; border-radius:10px;
+    background-color:#ff4444; color:#fff; font-weight:bold; cursor:pointer; width:85%; max-width:320px;
+    transition:transform .15s ease;
+  }
+  button:hover:not(:disabled) { transform:scale(1.03); }
+  button:disabled { cursor: not-allowed; background:#444; }
+  #visorCatalogo { display:none; padding:12px 8px 40px; min-height:100vh; box-sizing:border-box; }
+  #titulo-catalogo { color:#0af; font-weight:bold; margin-bottom: 12px; }
+  #imagenCatalogo { max-width: 95%; max-height: 80vh; border: 2px solid #444; background: #000; }
+  #btnMenu { margin:12px 0; padding:10px 18px; font-size:16px; border:none; border-radius:8px; background:#ff6600; color:#fff; cursor:pointer; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<div id="inicio">
+  <h1>Presiona un botón para abrir el catálogo</h1>
+  <button id="btn1" disabled>Cargando...</button>
+  <button id="btn2" disabled>Cargando...</button>
+  <button id="btn3" disabled>Cargando...</button>
+</div>
+
+<div id="visorCatalogo" aria-hidden="true">
+  <div id="titulo-catalogo">Catálogo</div>
+  <img id="imagenCatalogo" src="" alt="Catálogo" loading="lazy"/>
+  <div>
+    <button id="btnMenu">⬅️ Volver al Menú</button>
+  </div>
+</div>
+
+<div id="error" style="color:#f55; font-weight:bold; display:none; margin-top:20px;">
+  ⚠️ Error al cargar la app. Revisa tu conexión o intenta más tarde.
+</div>
+
+<script>
+(() => {
+  // URL del JSON con los datos de los catálogos (los botones y sus URLs)
+  const REMOTE_JSON = 'https://tusitio.com/catlogos3botones.json'; // Cambia a tu URL real
+
+  const buttons = [document.getElementById('btn1'), document.getElementById('btn2'), document.getElementById('btn3')];
+  const inicioDiv = document.getElementById('inicio');
+  const visor = document.getElementById('visorCatalogo');
+  const tituloCatalogo = document.getElementById('titulo-catalogo');
+  const imagenCatalogo = document.getElementById('imagenCatalogo');
+  const btnMenu = document.getElementById('btnMenu');
+  const errorDiv = document.getElementById('error');
+
+  let catalogoActivo = null;
+
+  // Función para cargar JSON con fallback sencillo
+  async function fetchJson(url) {
+    const res = await fetch(url + '?t=' + Date.now());
+    if (!res.ok) throw new Error('No se pudo cargar JSON');
+    return res.json();
+  }
+
+  // Cargar botones desde JSON
+  async function cargarBotones() {
+    try {
+      const data = await fetchJson(REMOTE_JSON);
+      if (!data.botones || data.botones.length < 3) throw new Error('Datos insuficientes');
+
+      data.botones.slice(0,3).forEach((botonData, i) => {
+        buttons[i].textContent = botonData.nombre || `Catálogo ${i+1}`;
+        buttons[i].disabled = false;
+        buttons[i].onclick = () => abrirCatalogo(botonData.url, botonData.nombre);
+      });
+    } catch(e) {
+      console.error(e);
+      errorDiv.style.display = 'block';
+      buttons.forEach(b => b.disabled = true);
+    }
+  }
+
+  // Abrir catálogo: carga JSON con imágenes y muestra primera
+  async function abrirCatalogo(url, nombre) {
+    try {
+      const data = await fetchJson(url);
+      if (!data.base_url || !data.total_paginas) throw new Error('Catálogo inválido');
+
+      catalogoActivo = {
+        baseUrl: data.base_url,
+        totalPaginas: data.total_paginas,
+        extension: data.extension || '.webp',
+        nombre: nombre || 'Catálogo',
+        paginaActual: 1
+      };
+
+      mostrarPagina(1);
+      inicioDiv.style.display = 'none';
+      visor.style.display = 'block';
+      errorDiv.style.display = 'none';
+    } catch(e) {
+      console.error(e);
+      errorDiv.style.display = 'block';
+    }
+  }
+
+  // Mostrar página del catálogo (imagen)
+  function mostrarPagina(pagina) {
+    if (!catalogoActivo) return;
+    if (pagina < 1 || pagina > catalogoActivo.totalPaginas) return;
+    catalogoActivo.paginaActual = pagina;
+    tituloCatalogo.textContent = `${catalogoActivo.nombre} - Página ${pagina} / ${catalogoActivo.totalPaginas}`;
+    imagenCatalogo.src = `${catalogoActivo.baseUrl}${pagina}${catalogoActivo.extension}`;
+  }
+
+  // Volver al menú principal
+  btnMenu.onclick = () => {
+    visor.style.display = 'none';
+    inicioDiv.style.display = 'flex';
+    catalogoActivo = null;
+    imagenCatalogo.src = '';
+  };
+
+  cargarBotones();
+
+})();
+</script>
+
+</body>
+</html>
