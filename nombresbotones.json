@@ -1,16 +1,16 @@
 {
   "botones": [
     {
-      "nombre": "Catálogo Jafra",
-      "url": "https://catalogosdetodomx-a11y.github.io/jafracatalogos/catalogo1.json"
+      "nombre": "octubre pendiente",
+      "url": ""
     },
     {
-      "nombre": "Catálogo Fuller",
-      "url": "https://catalogosdetodomx-a11y.github.io/fullercatalogos/catalogo2.json"
+      "nombre": "septiembre",
+      "url": "https://catalogosdetodomx-a11y.github.io/jafracatalogos/bton2.json"
     },
     {
-      "nombre": "Catálogo Betterware",
-      "url": "https://catalogosdetodomx-a11y.github.io/betterwarecatalogos/catalogo3.json"
+      "nombre": "agosto",
+      "url": "https://catalogosdetodomx-a11y.github.io/jafracatalogos/bton3.json"
     }
   ]
 }
