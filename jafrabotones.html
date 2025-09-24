@@ -43,8 +43,8 @@
 
 <script>
 (() => {
-  // URL del JSON con los datos de los catálogos (los botones y sus URLs)
-  const REMOTE_JSON = 'https://catalogosdetodomx-a11y.github.io/jafracatalogos/nombresbotones.json'; // Cambia a tu URL real
+  // URL del JSON con datos de botones
+  const REMOTE_JSON = 'https://catalogosdetodomx-a11y.github.io/jafracatalogos/nombresbotones.json';
 
   const buttons = [document.getElementById('btn1'), document.getElementById('btn2'), document.getElementById('btn3')];
   const inicioDiv = document.getElementById('inicio');
@@ -56,23 +56,27 @@
 
   let catalogoActivo = null;
 
-  // Función para cargar JSON con fallback sencillo
   async function fetchJson(url) {
     const res = await fetch(url + '?t=' + Date.now());
     if (!res.ok) throw new Error('No se pudo cargar JSON');
     return res.json();
   }
 
-  // Cargar botones desde JSON
   async function cargarBotones() {
     try {
       const data = await fetchJson(REMOTE_JSON);
+      console.log("Datos JSON cargados:", data);
+
       if (!data.botones || data.botones.length < 3) throw new Error('Datos insuficientes');
 
       data.botones.slice(0,3).forEach((botonData, i) => {
-        buttons[i].textContent = botonData.nombre || `Catálogo ${i+1}`;
+        console.log(`Botón ${i+1}:`, botonData);
+
+        const nombreBoton = botonData.nombre || botonData.name || `Catálogo ${i+1}`;
+
+        buttons[i].textContent = nombreBoton;
         buttons[i].disabled = false;
-        buttons[i].onclick = () => abrirCatalogo(botonData.url, botonData.nombre);
+        buttons[i].onclick = () => abrirCatalogo(botonData.url, nombreBoton);
       });
     } catch(e) {
       console.error(e);
@@ -81,7 +85,6 @@
     }
   }
 
-  // Abrir catálogo: carga JSON con imágenes y muestra primera
   async function abrirCatalogo(url, nombre) {
     try {
       const data = await fetchJson(url);
@@ -105,7 +108,6 @@
     }
   }
 
-  // Mostrar página del catálogo (imagen)
   function mostrarPagina(pagina) {
     if (!catalogoActivo) return;
     if (pagina < 1 || pagina > catalogoActivo.totalPaginas) return;
@@ -114,7 +116,6 @@
     imagenCatalogo.src = `${catalogoActivo.baseUrl}${pagina}${catalogoActivo.extension}`;
   }
 
-  // Volver al menú principal
   btnMenu.onclick = () => {
     visor.style.display = 'none';
     inicioDiv.style.display = 'flex';
@@ -129,4 +130,3 @@
 
 </body>
 </html>
-
