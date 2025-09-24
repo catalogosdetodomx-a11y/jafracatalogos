@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Catálogos con 3 botones actualizables</title>
+<title>Catálogos con favoritos y Fancybox</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.css"/>
 <style>
   body { background:#111; color:#fff; font-family:sans-serif; margin:0; padding:0; text-align:center; user-select:none; }
   #inicio { display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; gap:12px; padding:0 12px; }
@@ -14,37 +15,83 @@
   }
   button:hover:not(:disabled) { transform:scale(1.03); }
   button:disabled { cursor: not-allowed; background:#444; }
+
   #visorCatalogo { display:none; padding:12px 8px 40px; min-height:100vh; box-sizing:border-box; }
-  #titulo-catalogo { color:#0af; font-weight:bold; margin-bottom: 12px; }
-  #imagenCatalogo { max-width: 95%; max-height: 80vh; border: 2px solid #444; background: #000; }
+  #barra-arriba {
+    width:100%; background:#222; padding:8px; display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap;
+    font-size:14px; position:sticky; top:0; z-index:999;
+  }
+  #titulo-catalogo { color:#0af; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:50%; }
+  #imagenWrapper { position:relative; display:inline-block; max-width:95%; margin:12px auto; }
+  #imagenCatalogo {
+    width:100%; display:block; border:2px solid #444; cursor:pointer; max-height:72vh; object-fit:contain; background:#000;
+  }
+  .btnImg {
+    position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.45); color:#fff; border:none; font-size:24px;
+    padding:8px 12px; cursor:pointer; border-radius:50%; font-weight:bold;
+  }
+  #btnPrevImg { left:-18px; }
+  #btnNextImg { right:-18px; }
   #btnMenu { margin:12px 0; padding:10px 18px; font-size:16px; border:none; border-radius:8px; background:#ff6600; color:#fff; cursor:pointer; font-weight:bold; }
+  #btnFavorito { font-size:18px; background:none; border:none; cursor:pointer; color:#fff; }
+  #btnFavorito.fav { color:#f00; text-shadow:0 0 6px rgba(255,0,0,0.6); }
+  #btnVerFav { padding:6px 8px; border-radius:6px; background:#444; border:none; color:#fff; cursor:pointer; margin-left:8px; }
+  #modalFav {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; overflow:auto; padding:60px 20px; box-sizing:border-box;
+  }
+  #modalFavContent { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:flex-start; }
+  .thumbFav {
+    position:relative; width:140px;
+  }
+  .thumbFav img {
+    width:100%; display:block; border-radius:8px; border:2px solid #fff; cursor:pointer;
+  }
+  .removeFav {
+    position:absolute; top:6px; right:6px; width:28px; height:28px; background:#f00; color:#fff; border:none; border-radius:50%; font-weight:bold;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
 </style>
 </head>
 <body>
 
-<div id="inicio">
-  <h1>Presiona un botón para abrir el catálogo</h1>
-  <button id="btn1" disabled>Cargando...</button>
-  <button id="btn2" disabled>Cargando...</button>
-  <button id="btn3" disabled>Cargando...</button>
-</div>
+<div id="contenido">
+  <div id="inicio">
+    <h1>Presiona un botón para abrir el catálogo</h1>
+    <button id="btn1" disabled>Cargando...</button>
+    <button id="btn2" disabled>Cargando...</button>
+    <button id="btn3" disabled>Cargando...</button>
+  </div>
 
-<div id="visorCatalogo" aria-hidden="true">
-  <div id="titulo-catalogo">Catálogo</div>
-  <img id="imagenCatalogo" src="" alt="Catálogo" loading="lazy"/>
-  <div>
+  <div id="visorCatalogo" aria-hidden="true">
+    <div id="barra-arriba" role="region" aria-label="Controles del visor">
+      <span id="titulo-catalogo">Catálogo</span>
+      <button class="btnImg" id="btnPrevImg" aria-label="Imagen anterior">←</button>
+      <button id="btnFavorito" title="Agregar a favoritos">❤</button>
+      <button id="btnVerFav" title="Ver favoritos">⭐</button>
+      <button class="btnImg" id="btnNextImg" aria-label="Imagen siguiente">→</button>
+    </div>
+
+    <div id="imagenWrapper">
+      <img id="imagenCatalogo" src="" alt="Catálogo" loading="lazy" tabindex="0"/>
+    </div>
+
     <button id="btnMenu">⬅️ Volver al Menú</button>
+  </div>
+
+  <div id="modalFav" role="dialog" aria-hidden="true" aria-label="Ventana de favoritos">
+    <button id="closeFav" style="position:fixed;top:12px;right:16px;background:#f00;color:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer;">Cerrar ✖</button>
+    <div id="modalFavContent"></div>
+  </div>
+
+  <div id="error" style="color:#f55; font-weight:bold; display:none; margin-top:20px;">
+    ⚠️ Error al cargar la app. Revisa tu conexión o intenta más tarde.
   </div>
 </div>
 
-<div id="error" style="color:#f55; font-weight:bold; display:none; margin-top:20px;">
-  ⚠️ Error al cargar la app. Revisa tu conexión o intenta más tarde.
-</div>
-
+<script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.js"></script>
 <script>
 (() => {
-  // URL del JSON con datos de botones
-  const REMOTE_JSON = 'https://catalogosdetodomx-a11y.github.io/jafracatalogos/nombresbotones.json';
+  const REMOTE_BOTONES = 'https://catalogosdetodomx-a11y.github.io/jafracatalogos/nombresbotones.json';
 
   const buttons = [document.getElementById('btn1'), document.getElementById('btn2'), document.getElementById('btn3')];
   const inicioDiv = document.getElementById('inicio');
@@ -52,31 +99,37 @@
   const tituloCatalogo = document.getElementById('titulo-catalogo');
   const imagenCatalogo = document.getElementById('imagenCatalogo');
   const btnMenu = document.getElementById('btnMenu');
+  const btnPrevImg = document.getElementById('btnPrevImg');
+  const btnNextImg = document.getElementById('btnNextImg');
+  const btnFavorito = document.getElementById('btnFavorito');
+  const btnVerFav = document.getElementById('btnVerFav');
+  const modalFav = document.getElementById('modalFav');
+  const modalFavContent = document.getElementById('modalFavContent');
+  const closeFav = document.getElementById('closeFav');
   const errorDiv = document.getElementById('error');
 
   let catalogoActivo = null;
+  let catalogo = [];
+  let currentIndex = 0;
+
+  function cacheBusted(u) { return u + '?t=' + Date.now(); }
 
   async function fetchJson(url) {
-    const res = await fetch(url + '?t=' + Date.now());
+    const res = await fetch(cacheBusted(url));
     if (!res.ok) throw new Error('No se pudo cargar JSON');
     return res.json();
   }
 
   async function cargarBotones() {
     try {
-      const data = await fetchJson(REMOTE_JSON);
-      console.log("Datos JSON cargados:", data);
-
+      const data = await fetchJson(REMOTE_BOTONES);
       if (!data.botones || data.botones.length < 3) throw new Error('Datos insuficientes');
 
       data.botones.slice(0,3).forEach((botonData, i) => {
-        console.log(`Botón ${i+1}:`, botonData);
-
         const nombreBoton = botonData.nombre || botonData.name || `Catálogo ${i+1}`;
-
         buttons[i].textContent = nombreBoton;
         buttons[i].disabled = false;
-        buttons[i].onclick = () => abrirCatalogo(botonData.url, nombreBoton);
+        buttons[i].onclick = () => abrirCatalogoDesdeJson(botonData.url, nombreBoton);
       });
     } catch(e) {
       console.error(e);
@@ -85,20 +138,18 @@
     }
   }
 
-  async function abrirCatalogo(url, nombre) {
+  async function abrirCatalogoDesdeJson(url, nombre) {
     try {
       const data = await fetchJson(url);
       if (!data.base_url || !data.total_paginas) throw new Error('Catálogo inválido');
 
-      catalogoActivo = {
-        baseUrl: data.base_url,
-        totalPaginas: data.total_paginas,
-        extension: data.extension || '.webp',
-        nombre: nombre || 'Catálogo',
-        paginaActual: 1
-      };
-
-      mostrarPagina(1);
+      catalogoActivo = nombre || url;
+      catalogo = [];
+      for (let i=1; i<=data.total_paginas; i++) {
+        catalogo.push({ src: `${data.base_url}${i}${data.extension || '.webp'}`, type: 'image' });
+      }
+      currentIndex = 0;
+      mostrarImagen();
       inicioDiv.style.display = 'none';
       visor.style.display = 'block';
       errorDiv.style.display = 'none';
@@ -108,23 +159,116 @@
     }
   }
 
-  function mostrarPagina(pagina) {
-    if (!catalogoActivo) return;
-    if (pagina < 1 || pagina > catalogoActivo.totalPaginas) return;
-    catalogoActivo.paginaActual = pagina;
-    tituloCatalogo.textContent = `${catalogoActivo.nombre} - Página ${pagina} / ${catalogoActivo.totalPaginas}`;
-    imagenCatalogo.src = `${catalogoActivo.baseUrl}${pagina}${catalogoActivo.extension}`;
+  function mostrarImagen() {
+    if (!catalogo.length) return;
+    imagenCatalogo.src = catalogo[currentIndex].src;
+    tituloCatalogo.textContent = `${catalogoActivo} - Página ${currentIndex+1} / ${catalogo.length}`;
+    actualizarBotonFavorito();
   }
 
-  btnMenu.onclick = () => {
+  // Navegación
+  btnPrevImg.addEventListener('click', () => {
+    currentIndex = (currentIndex - 1 + catalogo.length) % catalogo.length;
+    mostrarImagen();
+  });
+  btnNextImg.addEventListener('click', () => {
+    currentIndex = (currentIndex + 1) % catalogo.length;
+    mostrarImagen();
+  });
+
+  // Favoritos
+  function getFavoritos() {
+    try { return JSON.parse(localStorage.getItem('favoritos')||'[]'); } catch { return []; }
+  }
+  function setFavoritosArray(favs) {
+    try { localStorage.setItem('favoritos', JSON.stringify(favs)); } catch {}
+  }
+  function getFavoritosDelCatalogo() {
+    return getFavoritos().filter(f => f.catalogo === catalogoActivo).map(f => f.index);
+  }
+  function actualizarBotonFavorito() {
+    const favs = getFavoritosDelCatalogo();
+    if (favs.includes(currentIndex)) btnFavorito.classList.add('fav');
+    else btnFavorito.classList.remove('fav');
+  }
+  btnFavorito.addEventListener('click', () => {
+    let favs = getFavoritos();
+    const idx = favs.findIndex(f => f.catalogo === catalogoActivo && f.index === currentIndex);
+    if (idx >= 0) favs.splice(idx,1);
+    else favs.push({ catalogo: catalogoActivo, index: currentIndex });
+    setFavoritosArray(favs);
+    actualizarBotonFavorito();
+  });
+
+  // Ver favoritos
+  btnVerFav.addEventListener('click', () => {
+    abrirModalFavoritos();
+  });
+  closeFav.addEventListener('click', () => {
+    modalFav.style.display = 'none';
+    modalFav.setAttribute('aria-hidden', 'true');
+  });
+
+  function abrirModalFavoritos() {
+    const favs = getFavoritos().filter(f => f.catalogo === catalogoActivo);
+    modalFavContent.innerHTML = '';
+    if (favs.length === 0) {
+      modalFavContent.innerHTML = "<p style='color:#fff'>No tienes favoritos en este catálogo</p>";
+    } else {
+      favs.forEach(f => {
+        const i = f.index;
+        const divThumb = document.createElement('div');
+        divThumb.className = 'thumbFav';
+        const img = document.createElement('img');
+        img.src = catalogo[i]?.src || '';
+        img.loading = "lazy";
+        img.alt = "Favorito página " + (i+1);
+        img.setAttribute('tabindex', '0');
+        img.addEventListener('click', () => {
+          currentIndex = i;
+          mostrarImagen();
+          modalFav.style.display = 'none';
+          modalFav.setAttribute('aria-hidden', 'true');
+          abrirGaleriaFancybox(currentIndex);
+        });
+        const btnRemove = document.createElement('button');
+        btnRemove.className = 'removeFav';
+        btnRemove.textContent = 'X';
+        btnRemove.addEventListener('click', (e) => {
+          e.stopPropagation();
+          let allFavs = getFavoritos();
+          allFavs = allFavs.filter(x => !(x.catalogo === catalogoActivo && x.index === i));
+          setFavoritosArray(allFavs);
+          abrirModalFavoritos();
+          actualizarBotonFavorito();
+        });
+        divThumb.appendChild(img);
+        divThumb.appendChild(btnRemove);
+        modalFavContent.appendChild(divThumb);
+      });
+    }
+    modalFav.style.display = 'block';
+    modalFav.setAttribute('aria-hidden', 'false');
+  }
+
+  btnMenu.addEventListener('click', () => {
     visor.style.display = 'none';
     inicioDiv.style.display = 'flex';
     catalogoActivo = null;
-    imagenCatalogo.src = '';
-  };
+    catalogo = [];
+    currentIndex = 0;
+  });
+
+  // Abrir galería Fancybox
+  function abrirGaleriaFancybox(startIndex=0) {
+    if (!catalogo.length) return;
+    Fancybox.show(catalogo, { startIndex });
+  }
+
+  // Al hacer clic en la imagen del catálogo se abre Fancybox desde esa imagen
+  imagenCatalogo.addEventListener('click', () => abrirGaleriaFancybox(currentIndex));
 
   cargarBotones();
-
 })();
 </script>
 
