@@ -1,7 +1,7 @@
 {
   "botones": [
-    { "nombre": "Catálogo octubre", "url": "https://tusitio.com/catalogoA.json" },
-    { "nombre": "Catálogo septiembre", "url": "https://tusitio.com/catalogoB.json" },
-    { "nombre": "Catálogo agosto", "url": "https://tusitio.com/catalogoC.json" }
+    { "nombre": "octubre pendiente...", "url": "" },
+    { "nombre": "Catálogo septiembre", "url": "https://catalogosdetodomx-a11y.github.io/jafracatalogos/bton2.json" },
+    { "nombre": "Catálogo agosto", "url": "https://catalogosdetodomx-a11y.github.io/jafracatalogos/bton3.json" }
   ]
 }
