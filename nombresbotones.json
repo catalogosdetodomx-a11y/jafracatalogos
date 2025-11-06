@@ -1,15 +1,15 @@
 {
   "botones": [
     {
-      "nombre": "octubre pendiente...",
+      "nombre": "DICIEMBRE pendiente...",
       "url": ""
     },
     {
-      "nombre": "septiembre",
+      "nombre": "NOVIEMBRE",
       "url": "https://catalogosdetodomx-a11y.github.io/jafracatalogos/bton2.json"
     },
     {
-      "nombre": "agosto",
+      "nombre": "OCTUBRE",
       "url": "https://catalogosdetodomx-a11y.github.io/jafracatalogos/bton3.json"
     }
   ]
